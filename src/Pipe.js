@@ -8,18 +8,34 @@ var Pipe = cc.Node.extend({
         this._super();
         this._top_pipe = new cc.Sprite("#top_pipe.png");
         this._bottom_pipe = new cc.Sprite("#bottom_pipe.png");
+        this._top_pipe2 = new cc.Sprite("#top_pipe.png");
+        this._bottom_pipe2 = new cc.Sprite("#bottom_pipe.png");
         this._top_pipe.y = this._bottom_pipe.y + 1050;
-        // this.x = 100;
-		// this.y = 0.5 * WIN_SIZE.height;
-		// this.anchorX = 0;
-		// this.anchorY = 0;
-		// this.setScale(0.65);
+
+        this._top_pipe2.y = this._bottom_pipe.y - 500;
+        this._bottom_pipe2.y = this._top_pipe.y + 500;
+
         this.addChild(this._top_pipe);
         this.addChild(this._bottom_pipe);
-        this.x = x;
-        this.y = y
+        this.addChild(this._top_pipe2);
+        this.addChild(this._bottom_pipe2);
+        this.setPosition(x, y);
+
         this.setScale(0.6);
         this.zIndex = 0;
+
+        // this.scheduleUpdate();
+    },
+
+    // update:function(dt) {
+    //     this.x = this.x - 100*dt;
+    // },
+    getListBoundingBox: function(){
+        var b1 = this._top_pipe.getBoundingBoxToWorld();
+        var b2 = this._bottom_pipe.getBoundingBoxToWorld();
+        var b3 = this._top_pipe2.getBoundingBoxToWorld();
+        var b4 = this._bottom_pipe2.getBoundingBoxToWorld();
+        return [b1, b2, b3, b4];
     }
-    
+
 });

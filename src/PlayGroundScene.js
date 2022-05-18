@@ -1,3 +1,8 @@
+var NUM_PIPE = 4;
+var DISTANCE = 300;
+var SPEED = 100;
+
+var GROUND = null;
 
 var PlayGroundScene = cc.Scene.extend({
 	
@@ -23,6 +28,14 @@ var PlayGround = cc.Layer.extend({
 	_test_ui: null,
 	
 	_shop_ui: null,
+
+	_container: [],
+
+	_last_pipe: null,
+
+	_bird: null,
+
+	_ground: null,
 	
     ctor:function () 
 	{
@@ -70,13 +83,26 @@ var PlayGround = cc.Layer.extend({
 
 		cc.spriteFrameCache.addSpriteFrames(res.flappy_plist, res.flappy_png);
 
+		// var ready = new cc.Sprite("#getready.png");
+		// ready.x = 300;
+		// ready.y = 300;
+		// ready.zIndex = 100;
+		// this.addChild(ready);
+
+		// var start = new cc.Sprite("#start.png");
+		// start.x = 300;
+		// start.y = 300;
+		// start.zIndex = 1000;
+		// this.addChild(start);
+
 		var bg = new cc.Sprite("#background.png");
 		bg.x = 0;
 		bg.y = 0;
 		bg.anchorX = 0;
 		bg.anchorY = 0;
 
-		var ground = new cc.Sprite("#ground.png");
+		this._ground = new cc.Sprite("#ground.png");
+		var ground = this._ground;
 		ground.x = 0;
 		ground.y = -50;
 		ground.anchorX = 0;
@@ -96,13 +122,58 @@ var PlayGround = cc.Layer.extend({
 		// bird.setScale(0.65)
 		// this.addChild(bird);
 
-		var bird = new Bird();
+		this._bird = new Bird();
+		var bird = this._bird;
 		this.addChild(bird);
 
-		var pipe = new Pipe(400, 500);
-		log(pipe.width);
-		this.addChild(pipe);
+		var firstPosition = [400, 100];
+		for (var i = 0; i < NUM_PIPE; i++){
+			var pipe = new Pipe(firstPosition[0], firstPosition[1]);
+			this._container.push(pipe);
+			this.addChild(pipe)
+			firstPosition[0] += DISTANCE;
+			firstPosition[1] += 100;
+		}
 
+		this._last_pipe = this._container[NUM_PIPE-1];
+
+		if( 'mouse' in cc.sys.capabilities ) {
+            cc.eventManager.addListener({
+                 event: cc.EventListener.MOUSE,
+                onMouseDown: function(event) {
+                    // var pos = event.getLocation(), target = event.getCurrentTarget();
+                    // if(event.getButton() === cc.EventMouse.BUTTON_RIGHT)
+                    //     cc.log("onRightMouseDown at: " + pos.x + " " + pos.y );
+                    // else if(event.getButton() === cc.EventMouse.BUTTON_LEFT)
+                    //     cc.log("onLeftMouseDown at: " + pos.x + " " + pos.y );
+                    // target.sprite.x = pos.x;
+                    // target.sprite.y = pos.y;
+					bird.clicked();
+                },
+                // onMouseMove: function(event){
+                //     var pos = event.getLocation(), target = event.getCurrentTarget();
+                //     cc.log("onMouseMove at: " + pos.x + " " + pos.y );
+                //     // target.sprite.x = pos.x;
+                //     // target.sprite.y = pos.y;
+                // },
+                // onMouseUp: function(event){
+                //     var pos = event.getLocation(), target = event.getCurrentTarget();
+				// 		// target.sprite.x = pos.x;
+				// 		// target.sprite.y = pos.y;
+                //     cc.log("onMouseUp at: " + pos.x + " " + pos.y );
+                // }
+            }, this);
+			log("hello");
+        } else {
+            cc.log("MOUSE Not supported");
+        }
+		
+
+		// var pipe1 = new Pipe(-50, 0); // 0 -> 500
+		// var pipe2 = new Pipe(pipe1.getPositionX() + 100, 100); // 0 -> 500
+		// var pipe3 = new Pipe(pipe2.getPositionX() + 100, 100); // 0 -> 500
+		// this.addChild(pipe1);
+		// this.addChild(pipe2);
 
 
 		
@@ -300,6 +371,8 @@ var PlayGround = cc.Layer.extend({
 		
 		//schedule call function update() each frame
 		this.scheduleUpdate();
+		this.schedule(this.updatePipe, 0.01);
+		
 	},
 
     update:function (dt)
@@ -308,9 +381,21 @@ var PlayGround = cc.Layer.extend({
 	   
 	   //uncomment to test native object
 	   //this._test_node.update(dt);
-	   
+	   this.collisionWithPipes();
+	   this.collisionWithGround();
     },
 	
+	updatePipe:function(dt){
+		for(var i = 0; i < NUM_PIPE; i++){
+			if (this._container[i].getPositionX() < -50){
+				this._container[i].setPosition(this._last_pipe.x + DISTANCE, Math.random()*500) // y from 0 to 500
+				this._last_pipe = this._container[i];
+				continue;
+			}
+			this._container[i].x -= SPEED*dt;
+	   }
+	},
+
 	onExit: function()
 	{
 		//WARNING: must call this._super() !!!
@@ -345,5 +430,26 @@ var PlayGround = cc.Layer.extend({
 	{
 		cc.log("onButtonBuyRankingItemClicked() - item name = " + sender._item_name);
 	},
+
+	collisionWithPipes:function() {
+		var rectBird = this._bird.getBoundingBox();
+		for (var i = 0; i < NUM_PIPE; i++){
+			lst = this._container[i].getListBoundingBox();
+			for (var j = 0; j < 4; j++){
+				if (cc.rectIntersectsRect(rectBird, lst[j])){
+					log("collisionnnnn");
+					this.cleanup();
+				}
+			}
+		}
+	},
+
+	collisionWithGround:function() {
+		if (this._bird.y <= this._ground.getPositionY() + this._ground.height){
+			this._bird.y = this._ground.getPositionY() + this._ground.height;
+			log("collisionnnnn");
+			this.cleanup();
+		}
+	}
 });
 
